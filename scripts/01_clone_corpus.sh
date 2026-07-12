@@ -5,165 +5,51 @@ set -e
 cd "$(dirname "$0")/.."
 mkdir -p data/raw && cd data/raw
 
-echo "Cloning picorv32 (ISC license, tiny RV32 core)..."
-[ -d picorv32 ] || git clone --depth 1 https://github.com/YosysHQ/picorv32
+clone_repo () {
+    local name=$1
+    local url=$2
 
-echo "Cloning ibex (Apache-2.0, production-quality RV32 core + DV env)..."
-[ -d ibex ] || git clone --depth 1 https://github.com/lowRISC/ibex
-
-echo "Cloning uvm-core (Apache-2.0, the actual UVM base class library)..."
-[ -d uvm-core ] || git clone --depth 1 https://github.com/accellera-official/uvm-core
-
-echo "Sparse-cloning a few OpenTitan peripherals (Apache-2.0, register-map examples)..."
-if [ ! -d opentitan ]; then
-  git clone --filter=blob:none --sparse --depth 1 https://github.com/lowRISC/opentitan
-  cd opentitan
-  git sparse-checkout set hw/ip/i2c hw/ip/uart hw/ip/spi_device
-  cd ..
-fi
-
-echo "Cloning UVM-Examples (Apache-2.0, comprehensive UVM examples)..."
-[ -d UVM-Examples ] || git clone --depth 1 https://github.com/SeanOBoyle/UVM-Examples
-
-echo "Cloning UVM-Core (Apache-2.0, official UVM library)..."
-[ -d uvm-core ] || git clone --depth 1 https://github.com/accellera-official/uvm-core
-
-echo "Cloning Core-V-Verif (Apache-2.0, industrial UVM verification environment)..."
-[ -d core-v-verif ] || git clone --depth 1 https://github.com/openhwgroup/core-v-verif
-
-echo "Cloning CORE-V Cores (Apache-2.0)..."
-[ -d core-v-cores ] || git clone --depth 1 https://github.com/openhwgroup/core-v-cores
-
-echo "Cloning CV32E40P (Apache-2.0, RTL + DV)..."
-[ -d cv32e40p ] || git clone --depth 1 https://github.com/openhwgroup/cv32e40p
-
-echo "Cloning CV32E40X (Apache-2.0, RTL + DV)..."
-[ -d cv32e40x ] || git clone --depth 1 https://github.com/openhwgroup/cv32e40x
-
-echo "Cloning CV32E40S (Apache-2.0, RTL + DV)..."
-[ -d cv32e40s ] || git clone --depth 1 https://github.com/openhwgroup/cv32e40s
-
-echo "Cloning CVA6 (Apache-2.0, 64-bit RISC-V RTL)..."
-[ -d cva6 ] || git clone --depth 1 https://github.com/openhwgroup/cva6
-
-echo "Cloning Ibex (Apache-2.0, RTL + DV)..."
-[ -d ibex ] || git clone --depth 1 https://github.com/lowRISC/ibex
-
-echo "Cloning PicoRV32 (ISC License)..."
-[ -d picorv32 ] || git clone --depth 1 https://github.com/YosysHQ/picorv32
-
-echo "Cloning PULP AXI (Apache-2.0, AXI RTL + Verification)..."
-[ -d axi ] || git clone --depth 1 https://github.com/pulp-platform/axi
-
-echo "Cloning AXI UVM VIP (MIT)..."
-[ -d axi-uvm ] || git clone --depth 1 https://github.com/marcoz001/axi-uvm
-
-echo "Cloning AXI (Alex Forencich, MIT)..."
-[ -d verilog-axi ] || git clone --depth 1 https://github.com/alexforencich/verilog-axi
-
-echo "Cloning Wishbone/AXI Verification (Apache-2.0)..."
-[ -d wb2axip ] || git clone --depth 1 https://github.com/ZipCPU/wb2axip
-
-echo "Cloning APB Components..."
-[ -d apb ] || git clone --depth 1 https://github.com/pulp-platform/apb
-
-echo "Cloning Common Cells (Verification utilities)..."
-[ -d common_cells ] || git clone --depth 1 https://github.com/pulp-platform/common_cells
-
-echo "Cloning Register Interface (regtool)..."
-[ -d register_interface ] || git clone --depth 1 https://github.com/pulp-platform/register_interface
-
-echo "Cloning Bender (dependency manager)..."
-[ -d bender ] || git clone --depth 1 https://github.com/pulp-platform/bender
-
-echo "Cloning OpenTitan (Apache-2.0)..."
-[ -d opentitan ] || git clone --depth 1 https://github.com/lowRISC/opentitan
-
-echo "Sparse-cloning OpenTitan DV environments..."
-if [ ! -d opentitan_dv ]; then
-    git clone --filter=blob:none --sparse --depth 1 https://github.com/lowRISC/opentitan opentitan_dv
-    cd opentitan_dv
-    git sparse-checkout set \
-        hw/ip/uart/dv \
-        hw/ip/i2c/dv \
-        hw/ip/spi_device/dv \
-        hw/ip/gpio/dv \
-        hw/ip/aes/dv \
-        hw/ip/kmac/dv \
-        hw/ip/flash_ctrl/dv \
-        hw/ip/rv_timer/dv \
-        hw/ip/hmac/dv \
-        hw/ip/otbn/dv \
-        hw/ip/pwm/dv \
-        hw/ip/keymgr/dv \
-        hw/ip/csrng/dv
-    cd ..
-fi
-
-echo "Sparse-cloning OpenTitan Register Generator..."
-if [ ! -d opentitan_reggen ]; then
-    git clone --filter=blob:none --sparse --depth 1 https://github.com/lowRISC/opentitan opentitan_reggen
-    cd opentitan_reggen
-    git sparse-checkout set util/reggen
-    cd ..
-fi
-
-echo "Cloning SV-Tests (Apache-2.0)..."
-[ -d sv-tests ] || git clone --depth 1 https://github.com/chipsalliance/sv-tests
-
-echo "Cloning Surelog (Apache-2.0, SystemVerilog Parser)..."
-[ -d Surelog ] || git clone --depth 1 https://github.com/chipsalliance/Surelog
-
-echo "Cloning UHDM (Apache-2.0)..."
-[ -d UHDM ] || git clone --depth 1 https://github.com/chipsalliance/UHDM
-
-echo "Cloning Verible (Apache-2.0, Formatter/Linter)..."
-[ -d verible ] || git clone --depth 1 https://github.com/chipsalliance/verible
-
-echo "Cloning Verilator (LGPL-3.0, Simulator)..."
-[ -d verilator ] || git clone --depth 1 https://github.com/verilator/verilator
-
-echo "Cloning Yosys (ISC License)..."
-[ -d yosys ] || git clone --depth 1 https://github.com/YosysHQ/yosys
-
-echo "Cloning SymbiYosys (Formal Verification)..."
-[ -d sby ] || git clone --depth 1 https://github.com/YosysHQ/sby
-
-echo "Cloning Cocotb (BSD-3)..."
-[ -d cocotb ] || git clone --depth 1 https://github.com/cocotb/cocotb
-
-echo "Cloning Cocotb Bus..."
-[ -d cocotb-bus ] || git clone --depth 1 https://github.com/cocotb/cocotb-bus
-
-echo "Cloning PyUVM..."
-[ -d pyuvm ] || git clone --depth 1 https://github.com/pyuvm/pyuvm
-
-echo "Cloning FuseSoC..."
-[ -d fusesoc ] || git clone --depth 1 https://github.com/olofk/fusesoc
-
-echo "Cloning Edalize..."
-[ -d edalize ] || git clone --depth 1 https://github.com/olofk/edalize
-
-echo "Cloning RISC-V Architectural Tests..."
-[ -d riscv-arch-test ] || git clone --depth 1 https://github.com/riscv-non-isa/riscv-arch-test
-
-echo "Cloning RISC-V DV Generator..."
-[ -d riscv-dv ] || git clone --depth 1 https://github.com/chipsalliance/riscv-dv
-
-echo "Cloning RISC-V ISA Simulator (Spike)..."
-[ -d riscv-isa-sim ] || git clone --depth 1 https://github.com/riscv-software-src/riscv-isa-sim
-
-echo "Cloning Rocket Chip..."
-[ -d rocket-chip ] || git clone --depth 1 https://github.com/chipsalliance/rocket-chip
-
-echo "Cloning Chipyard..."
-[ -d chipyard ] || git clone --depth 1 https://github.com/ucb-bar/chipyard
-
-echo "Cloning OpenROAD..."
-[ -d OpenROAD ] || git clone --depth 1 https://github.com/The-OpenROAD-Project/OpenROAD
-
-echo "Cloning OpenLane..."
-[ -d OpenLane ] || git clone --depth 1 https://github.com/The-OpenROAD-Project/OpenLane
+    echo "Cloning $name..."
+    if [ ! -d "$name" ]; then
+        git clone --depth 1 "$url" "$name" || echo "WARNING: Failed to clone $name"
+    fi
+}
+clone_repo picorv32 https://github.com/YosysHQ/picorv32
+clone_repo ibex https://github.com/lowRISC/ibex
+clone_repo uvm-core https://github.com/accellera-official/uvm-core
+clone_repo core-v-verif https://github.com/openhwgroup/core-v-verif
+clone_repo core-v-cores https://github.com/openhwgroup/core-v-cores
+clone_repo cv32e40p https://github.com/openhwgroup/cv32e40p
+clone_repo cv32e40x https://github.com/openhwgroup/cv32e40x
+clone_repo cv32e40s https://github.com/openhwgroup/cv32e40s
+clone_repo cva6 https://github.com/openhwgroup/cva6
+clone_repo axi https://github.com/pulp-platform/axi
+clone_repo axi-uvm https://github.com/marcoz001/axi-uvm
+clone_repo verilog-axi https://github.com/alexforencich/verilog-axi
+clone_repo wb2axip https://github.com/ZipCPU/wb2axip
+clone_repo apb https://github.com/pulp-platform/apb
+clone_repo common_cells https://github.com/pulp-platform/common_cells
+clone_repo register_interface https://github.com/pulp-platform/register_interface
+clone_repo bender https://github.com/pulp-platform/bender
+clone_repo sv-tests https://github.com/chipsalliance/sv-tests
+clone_repo Surelog https://github.com/chipsalliance/Surelog
+clone_repo UHDM https://github.com/chipsalliance/UHDM
+clone_repo verible https://github.com/chipsalliance/verible
+clone_repo verilator https://github.com/verilator/verilator
+clone_repo yosys https://github.com/YosysHQ/yosys
+clone_repo sby https://github.com/YosysHQ/sby
+clone_repo cocotb https://github.com/cocotb/cocotb
+clone_repo cocotb-bus https://github.com/cocotb/cocotb-bus
+clone_repo pyuvm https://github.com/pyuvm/pyuvm
+clone_repo fusesoc https://github.com/olofk/fusesoc
+clone_repo edalize https://github.com/olofk/edalize
+clone_repo riscv-arch-test https://github.com/riscv-non-isa/riscv-arch-test
+clone_repo riscv-dv https://github.com/chipsalliance/riscv-dv
+clone_repo riscv-isa-sim https://github.com/riscv-software-src/riscv-isa-sim
+clone_repo rocket-chip https://github.com/chipsalliance/rocket-chip
+clone_repo chipyard https://github.com/ucb-bar/chipyard
+clone_repo OpenROAD https://github.com/The-OpenROAD-Project/OpenROAD
+clone_repo OpenLane https://github.com/The-OpenROAD-Project/OpenLane
 
 
 
