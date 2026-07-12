@@ -1,0 +1,13 @@
+torch
+transformers
+accelerate
+datasets
+peft
+trl
+bitsandbytes
+sentencepiece
+unsloth
+huggingface_hub
+pyslang
+datasketch
+anthropic
