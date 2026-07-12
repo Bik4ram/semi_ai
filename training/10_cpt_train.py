@@ -79,6 +79,7 @@ def main():
         train_dataset=dataset,
         dataset_text_field="text",
         max_seq_length=MAX_SEQ_LEN,
+        dataset_num_proc=1,
         args=SFTConfig(
             output_dir=str(OUT_DIR),
             per_device_train_batch_size=2,
