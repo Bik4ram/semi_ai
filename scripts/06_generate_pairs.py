@@ -43,7 +43,16 @@ OUT_FILE = ROOT / "data" / "processed" / "pairs.jsonl"
 
 random.seed(42)
 
-
+# Task types that produce synthesizable RTL and should be run through
+# Verilator. Everything else (explanations, SVA, docs) is skipped --
+# Verilator doesn't support the full SVA language (e.g. |=>), so
+# linting non-RTL outputs against it produces false failures.
+VERIFY_TASKS = {
+    "rtl_generation",
+    "rtl_bug_fix",
+    "rtl_completion",
+    "rtl_bug_finding",
+}
 # ----------------------------------------------------------------------
 # Real verilator-based lint check (this actually runs, unlike before)
 # ----------------------------------------------------------------------
@@ -229,13 +238,19 @@ def main():
     pairs.extend(llm_augment(chunks))
 
     # Verify every pair that contains SV/assertion code
-    verified, unverified, failed = 0, 0, 0
+    # Verify every pair that contains SV/assertion code
+    verified, unverified, failed, skipped = 0, 0, 0, 0
     for p in pairs:
+        if p["task_type"] not in VERIFY_TASKS:
+            p["lint_status"] = "not_applicable"
+            skipped += 1
+            continue
         code_blocks = re.findall(r"```(?:systemverilog)?\n(.*?)\n```", p["output"], re.DOTALL)
         if p["task_type"] in ("sva_assertion_generation",) and not code_blocks:
             code_blocks = [p["output"]]  # whole output is code for this task type
         if not code_blocks:
             p["lint_status"] = "not_applicable"
+            skipped += 1
             continue
         all_ok = True
         for block in code_blocks:
@@ -258,7 +273,8 @@ def main():
             p["lint_status"] = "verified_fail"
             failed += 1
 
-    print(f"Lint verification: {verified} passed, {failed} failed, {unverified} skipped (verilator unavailable)")
+    total_skipped = skipped + unverified
+    print(f"Lint verification: {verified} passed, {failed} failed, {total_skipped} skipped")
 
     # drop anything that explicitly failed compilation
     before = len(pairs)
