@@ -19,12 +19,11 @@ plus an optional third way that uses an API key if you have one:
    be clearly labeled as hand-written rather than corpus-derived, and
    the script needed to not have a syntax error).
 
-3. OPTIONAL LLM AUGMENTATION (needs ANTHROPIC_API_KEY env var): calls
-   Claude on real corpus chunks to generate explanation/UVM-sequence
-   pairs. Every SV/assertion output is then verified with a REAL
-   verilator --lint-only run before being kept -- this is the
-   "mandatory quality filter" that never actually ran in the previous
-   version.
+3. OPTIONAL LLM AUGMENTATION (needs GEMINI_API_KEY env var): calls
+   Gemini on real corpus chunks to generate explanation pairs. Every
+   SV/assertion output is then verified with a REAL verilator
+   --lint-only run before being kept -- this is the "mandatory
+   quality filter" that never actually ran in the previous version.
 
 Input : data/processed/chunks_labeled.jsonl
 Output: data/processed/pairs.jsonl
@@ -36,6 +35,7 @@ import re
 import subprocess
 import tempfile
 from pathlib import Path
+from google import genai
 
 ROOT = Path(__file__).parent.parent
 IN_FILE = ROOT / "data" / "processed" / "chunks_labeled.jsonl"
@@ -47,7 +47,7 @@ random.seed(42)
 # ----------------------------------------------------------------------
 # Real verilator-based lint check (this actually runs, unlike before)
 # ----------------------------------------------------------------------
-def sv_compiles(code: str) -> tuple[bool, str]:
+def sv_compiles(code: str) -> tuple[bool | None, str]:
     with tempfile.NamedTemporaryFile(suffix=".sv", mode="w", delete=False) as f:
         f.write(code)
         path = f.name
@@ -148,49 +148,66 @@ SEED_EXAMPLES = [
 # Method 3 (optional): LLM-augmented generation from real chunks
 # ----------------------------------------------------------------------
 def llm_augment(chunks: list[dict], n: int = 15) -> list[dict]:
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    api_key = os.environ.get("GEMINI_API_KEY")
+
     if not api_key:
-        print("No ANTHROPIC_API_KEY set -- skipping LLM augmentation "
-              "(this is optional; mechanical + seed pairs still work fully).")
-        return []
-    try:
-        import anthropic
-    except ImportError:
-        print("`anthropic` package not installed -- skipping LLM augmentation. "
-              "Run: pip install anthropic")
+        print("No GEMINI_API_KEY set -- skipping LLM augmentation.")
         return []
 
-    client = anthropic.Anthropic(api_key=api_key)
-    candidates = [c for c in chunks if c.get("type") == "sv_module" and 100 < len(c["content"]) < 2000]
+    client = genai.Client(api_key=api_key)
+
+    candidates = [
+        c for c in chunks
+        if c.get("type") == "sv_module"
+        and 100 < len(c["content"]) < 2000
+    ]
+
     random.shuffle(candidates)
+
     results = []
+
     for chunk in candidates[:n]:
-        prompt = (
-            "Explain the following real SystemVerilog module: its ports, "
-            "functionality, and any notable timing behavior. Be concise and technical.\n\n"
-            f"```systemverilog\n{chunk['content']}\n```"
-        )
+
+        prompt = f"""Explain the following real SystemVerilog module.
+
+Describe:
+- Purpose
+- Ports
+- Functionality
+- Timing behavior
+- Important design details
+
+SystemVerilog:
+
+```systemverilog
+{chunk["content"]}
+```
+"""
+
         try:
-            msg = client.messages.create(
-                model="claude-sonnet-4-6", max_tokens=500,
-                messages=[{"role": "user", "content": prompt}],
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
             )
+
             results.append({
                 "task_type": "rtl_explanation",
-                "instruction": "Explain the following SystemVerilog module in detail.",
+                "instruction": "Explain the following real SystemVerilog module in detail. Describe its ports, functionality, and timing behavior.",
                 "input": chunk["content"],
-                "output": msg.content[0].text,
-                "source": "llm_augmented",
+                "output": response.text,
+                "source": "llm_augmented_gemini",
                 "source_path": chunk.get("source_path"),
             })
+
         except Exception as e:
-            print(f"  [llm skip] {e}")
-    print(f"LLM-augmented {len(results)} examples from real corpus chunks")
+            print(f"[Gemini skip] {e}")
+
     return results
 
 
 def main():
-    chunks = [json.loads(l) for l in open(IN_FILE)]
+    with open(IN_FILE) as f:
+        chunks = [json.loads(l) for l in f]
     print(f"Loaded {len(chunks)} labeled chunks")
 
     pairs = []
