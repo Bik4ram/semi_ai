@@ -246,7 +246,11 @@ def main():
                 all_ok = None
                 break
             if not ok:
-                all_ok = False
+    print("=" * 80)
+    print("Verilator failed")
+    print(detail)
+    print("=" * 80)
+    all_ok = False
         if all_ok is True:
             p["lint_status"] = "verified_pass"
             verified += 1
