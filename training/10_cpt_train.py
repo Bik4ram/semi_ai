@@ -72,25 +72,27 @@ def main():
     )
 
     dataset = load_cpt_dataset()
-
+    
+    
     trainer = SFTTrainer(
         model=model,
         tokenizer=tokenizer,
         train_dataset=dataset,
-        dataset_text_field="text",
-        max_seq_length=MAX_SEQ_LEN,
-        dataset_num_proc=1,
         args=SFTConfig(
             output_dir=str(OUT_DIR),
+            dataset_text_field="text",
+            max_seq_length=MAX_SEQ_LEN,
+            dataset_num_proc=1,
             per_device_train_batch_size=2,
             gradient_accumulation_steps=4,
-            num_train_epochs=1,          # CPT usually needs only 1-2 passes over raw text
-            learning_rate=1e-4,           # lower LR than SFT -- we're nudging knowledge, not behavior
+            num_train_epochs=1,
+            learning_rate=1e-4,
             logging_steps=5,
             save_strategy="epoch",
             report_to="none",
         ),
     )
+
 
     print("Starting CPT training...")
     trainer.train()
