@@ -23,7 +23,7 @@ ROOT = Path(__file__).parent.parent
 
 # ---- CONFIG ----
 BASE_MODEL = "Qwen/Qwen2.5-Coder-1.5B-Instruct"
-START_FROM_CPT = True   # set True to continue from models/cpt-lora instead
+START_FROM_CPT = False   # set True to continue from models/cpt-lora instead
 MAX_SEQ_LEN = 2048
 # -----------------
 
