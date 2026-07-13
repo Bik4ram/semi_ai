@@ -209,9 +209,8 @@ SystemVerilog:
           })
 
         except Exception as e:
-        print(f"[Groq skip] {e}")
-
-return results
+           print(f"[Groq skip] {e}")
+    return results
 
 
 def main():
