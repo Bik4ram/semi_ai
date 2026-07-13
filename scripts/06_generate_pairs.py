@@ -194,29 +194,20 @@ SystemVerilog:
 ```systemverilog
 {chunk["content"]}
 """
-
-            try:
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            temperature=0.2,
-        )
-
-        results.append({
+       try:
+          response = client.chat.completions.create(
+             model="llama-3.3-70b-versatile",
+             messages=[{"role": "user","content": prompt}],temperature=0.2,)
+          results.append({
             "task_type": "rtl_explanation",
             "instruction": "Explain the following real SystemVerilog module in detail. Describe its ports, functionality, and timing behavior.",
             "input": chunk["content"],
             "output": response.choices[0].message.content,
             "source": "llm_augmented_groq",
             "source_path": chunk.get("source_path"),
-        })
+          })
 
-    except Exception as e:
+except Exception as e:
         print(f"[Groq skip] {e}")
 
 return results
