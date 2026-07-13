@@ -234,7 +234,7 @@ def main():
         pairs.append(ex)
 
     # Method 3: optional LLM augmentation
-    pairs.extend(llm_augment(chunks))
+    pairs.extend(llm_augment(chunks, n=100))
 
     # Verify every pair that contains SV/assertion code
     # Verify every pair that contains SV/assertion code
