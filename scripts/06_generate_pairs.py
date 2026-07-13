@@ -35,7 +35,7 @@ import re
 import subprocess
 import tempfile
 from pathlib import Path
-from google import genai
+from openai import OpenAI
 
 ROOT = Path(__file__).parent.parent
 IN_FILE = ROOT / "data" / "processed" / "chunks_labeled.jsonl"
@@ -157,13 +157,16 @@ SEED_EXAMPLES = [
 # Method 3 (optional): LLM-augmented generation from real chunks
 # ----------------------------------------------------------------------
 def llm_augment(chunks: list[dict], n: int = 15) -> list[dict]:
-    api_key = os.environ.get("GEMINI_API_KEY")
+    api_key = os.environ.get("GROQ_API_KEY")
 
     if not api_key:
-        print("No GEMINI_API_KEY set -- skipping LLM augmentation.")
+        print("No GROQ_API_KEY set -- skipping LLM augmentation.")
         return []
 
-    client = genai.Client(api_key=api_key)
+    client = OpenAI(
+        api_key=api_key,
+        base_url="https://api.groq.com/openai/v1",
+    )
 
     candidates = [
         c for c in chunks
@@ -190,28 +193,33 @@ SystemVerilog:
 
 ```systemverilog
 {chunk["content"]}
-```
 """
 
-        try:
-            response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt,
-            )
+            try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            temperature=0.2,
+        )
 
-            results.append({
-                "task_type": "rtl_explanation",
-                "instruction": "Explain the following real SystemVerilog module in detail. Describe its ports, functionality, and timing behavior.",
-                "input": chunk["content"],
-                "output": response.text,
-                "source": "llm_augmented_gemini",
-                "source_path": chunk.get("source_path"),
-            })
+        results.append({
+            "task_type": "rtl_explanation",
+            "instruction": "Explain the following real SystemVerilog module in detail. Describe its ports, functionality, and timing behavior.",
+            "input": chunk["content"],
+            "output": response.choices[0].message.content,
+            "source": "llm_augmented_groq",
+            "source_path": chunk.get("source_path"),
+        })
 
-        except Exception as e:
-            print(f"[Gemini skip] {e}")
+    except Exception as e:
+        print(f"[Groq skip] {e}")
 
-    return results
+return results
 
 
 def main():
