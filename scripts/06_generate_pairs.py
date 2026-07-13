@@ -193,6 +193,7 @@ SystemVerilog:
 
 ```systemverilog
 {chunk["content"]}
+```
 """
        try:
           response = client.chat.completions.create(
