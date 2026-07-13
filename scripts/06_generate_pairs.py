@@ -208,7 +208,7 @@ SystemVerilog:
             "source_path": chunk.get("source_path"),
           })
 
-except Exception as e:
+        except Exception as e:
         print(f"[Groq skip] {e}")
 
 return results
